@@ -13,16 +13,18 @@ let gameWon = false;
 let revealedTreasures = [];
 let usedMimics = [];
 
-// 画像の読み込み
 const heroImg = new Image();
 const treasureImg = new Image();
 const mimicImg = new Image();
 const coinImg = new Image();
 
-heroImg.src = 'images/hero.png';
-treasureImg.src = 'images/treasure.png';
-mimicImg.src = 'images/mimic.png';
-coinImg.src = 'images/coin.png';
+heroImg.src = './images/hero.png';
+treasureImg.src = './images/treasure.png';
+mimicImg.src = './images/mimic.png';
+coinImg.src = './images/coin.png';
+
+const bgm = new Audio('./audio/bgm.mp3');
+bgm.loop = true;
 
 let loadedImages = 0;
 const totalImages = 4;
@@ -38,7 +40,7 @@ function imageLoadedOrFailed(name) {
 
 heroImg.onload = () => imageLoadedOrFailed("hero.png");
 heroImg.onerror = () => {
-  console.error("hero.png が読み込めません。ファイル名や拡張子を確認してください。");
+  console.error("hero.png が読み込めません。");
   imageLoadedOrFailed("hero.png (失敗)");
 };
 
