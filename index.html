@@ -7,7 +7,12 @@
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <div class="game-container">
+  <div id="start-screen">
+    <h1>迷路探索ゲーム</h1>
+    <button id="start-button">ゲームスタート</button>
+  </div>
+
+  <div class="game-container hidden" id="game-container">
     <div class="header">
       <h1>迷路探索ゲーム</h1>
       <div class="info">
@@ -38,8 +43,12 @@
 
   <div id="ending-screen"></div>
   <div id="loading">画像を読み込み中...</div>
+  <div id="restart-screen" class="hidden">
+    <h2>ミミックに食べられた！<br>最初からやり直しますか？</h2>
+    <button id="restart-button">リスタート</button>
+  </div>
 
-  <!-- 音声（相対パス） -->
+  <!-- 音声 -->
   <audio id="bgm" loop></audio>
   <audio id="seikai"></audio>
   <audio id="fuseikai"></audio>
@@ -47,7 +56,6 @@
   <audio id="takara"></audio>
   <audio id="kamituku"></audio>
 
-  <!-- スクリプト読み込み（相対パス） -->
   <script src="./quizData.js"></script>
   <script src="./script.js"></script>
 </body>
