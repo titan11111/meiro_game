@@ -13,7 +13,7 @@ body {
   min-height: 100vh;
   background-color: #1e1b18;
   padding: 10px;
-  overflow: auto; /* ← 修正 */
+  overflow: auto;
 }
 
 .game-container {
