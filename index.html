@@ -36,14 +36,19 @@
     </div>
   </div>
 
+  <div id="ending-screen"></div>
   <div id="loading">画像を読み込み中...</div>
 
-  <audio id="bgm" src="./audio/bgm.mp3" loop></audio>
+  <!-- 音声 -->
+  <audio id="bgm" loop></audio>
+  <audio id="seikai"></audio>
+  <audio id="fuseikai"></audio>
+  <audio id="recharge"></audio>
+  <audio id="takara"></audio>
+  <audio id="kamituku"></audio>
 
-  <script>
-    window.addEventListener('touchstart', () => bgm.play(), { once: true });
-    window.addEventListener('click', () => bgm.play(), { once: true });
-  </script>
+  <!-- スクリプト読み込み -->
+  <script src="quizData.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
