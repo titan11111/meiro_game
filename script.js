@@ -1,27 +1,13 @@
-let level = 1;
-let mazeSize;
-let cellSize;
-let maze = [];
-let hero = { x: 1, y: 1 };
-let treasures = [];
-let gameOver = false;
-let gameWon = false;
-let revealedTreasures = [];
-let usedMimics = [];
-let isQuizActive = false;
 let imagesLoaded = false;
 let audioLoaded = false;
+const loadingElement = document.getElementById("loading");
 
-const canvas = document.getElementById('mazeCanvas');
-const ctx = canvas.getContext('2d');
-const loadingElement = document.getElementById('loading');
-
-const bgm = document.getElementById('bgm');
-const seikaiSE = document.getElementById('seikai');
-const fuseikaiSE = document.getElementById('fuseikai');
-const rechargeSE = document.getElementById('recharge');
-const takaraSE = document.getElementById('takara');
-const kamitukuSE = document.getElementById('kamituku');
+const bgm = document.getElementById("bgm");
+const seikaiSE = document.getElementById("seikai");
+const fuseikaiSE = document.getElementById("fuseikai");
+const rechargeSE = document.getElementById("recharge");
+const takaraSE = document.getElementById("takara");
+const kamitukuSE = document.getElementById("kamituku");
 
 const heroImg = new Image();
 const treasureImg = new Image();
@@ -40,46 +26,79 @@ treasureImg.src = './images/treasure.png';
 mimicImg.src = './images/mimic.png';
 coinImg.src = './images/coin.png';
 
-let loadedImages = 0;
-let loadedAudio = 0;
-
-heroImg.onload = treasureImg.onload = mimicImg.onload = coinImg.onload = () => {
-  loadedImages++;
-  if (loadedImages === 4) {
-    imagesLoaded = true;
-    checkAllLoaded();
-  }
-};
-
-bgm.oncanplaythrough = seikaiSE.oncanplaythrough = fuseikaiSE.oncanplaythrough =
-rechargeSE.oncanplaythrough = takaraSE.oncanplaythrough = kamitukuSE.oncanplaythrough = () => {
-  loadedAudio++;
-  if (loadedAudio === 6) {
-    audioLoaded = true;
-    checkAllLoaded();
-  }
-};
+let imageCount = 0;
+let audioCount = 0;
 
 function checkAllLoaded() {
   if (imagesLoaded && audioLoaded) {
     loadingElement.style.display = 'none';
+    setupGame(); // ゲーム開始（後述）
   }
 }
 
-document.getElementById('start-button').addEventListener('click', () => {
-  document.getElementById('start-screen').classList.add('hidden');
-  document.getElementById('game-container').classList.remove('hidden');
-  playSound(bgm);
-  initGame();
-});
+function imageLoaded() {
+  imageCount++;
+  if (imageCount === 4) {
+    imagesLoaded = true;
+    checkAllLoaded();
+  }
+}
 
-document.getElementById('restart-button').addEventListener('click', () => {
-  document.getElementById('restart-screen').classList.add('hidden');
-  document.getElementById('game-container').classList.remove('hidden');
-  level = 1;
-  playSound(bgm);
+function audioLoadedFn() {
+  audioCount++;
+  if (audioCount === 6) {
+    audioLoaded = true;
+    checkAllLoaded();
+  }
+}
+
+heroImg.onload = treasureImg.onload = mimicImg.onload = coinImg.onload = imageLoaded;
+bgm.oncanplaythrough = seikaiSE.oncanplaythrough = fuseikaiSE.oncanplaythrough =
+rechargeSE.oncanplaythrough = takaraSE.oncanplaythrough = kamitukuSE.oncanplaythrough = audioLoadedFn;
+
+// ✅ 保険：8秒以内に読み込めなかったら強制スタート
+setTimeout(() => {
+  if (!imagesLoaded || !audioLoaded) {
+    console.warn("読み込みが遅れているため強制スタート");
+    imagesLoaded = true;
+    audioLoaded = true;
+    loadingElement.style.display = 'none';
+    setupGame();
+  }
+}, 8000);
+
+// ✅ BGMトリガー
+function setupAudioTriggers() {
+  const startAudio = () => {
+    bgm.volume = 0.5;
+    bgm.play().catch(() => {});
+    document.removeEventListener('click', startAudio);
+    document.removeEventListener('touchstart', startAudio);
+  };
+  document.addEventListener('click', startAudio);
+  document.addEventListener('touchstart', startAudio);
+}
+let level = 1;
+let mazeSize;
+let cellSize;
+let maze = [];
+let hero = { x: 1, y: 1 };
+let treasures = [];
+let revealedTreasures = [];
+let usedMimics = [];
+let gameOver = false;
+let gameWon = false;
+let isQuizActive = false;
+
+const canvas = document.getElementById('mazeCanvas');
+const ctx = canvas.getContext('2d');
+
+function setupGame() {
+  setupControls();
+  setupKeyboard();
+  setupResizeHandler();
   initGame();
-});
+}
 
 function initGame() {
   mazeSize = 10 + Math.floor(level * 1.5);
@@ -111,7 +130,6 @@ function generateMaze() {
   while (stack.length > 0) {
     const c = stack[stack.length - 1];
     const dirs = [];
-
     if (c.y > 2 && maze[c.y - 2][c.x] === 1) dirs.push({ x: 0, y: -1 });
     if (c.y < mazeSize - 3 && maze[c.y + 2][c.x] === 1) dirs.push({ x: 0, y: 1 });
     if (c.x > 2 && maze[c.y][c.x - 2] === 1) dirs.push({ x: -1, y: 0 });
@@ -129,14 +147,14 @@ function generateMaze() {
 }
 
 function placeTreasures() {
-  const base = [
+  const area = [
     { x: mazeSize - 2, y: mazeSize - 2 },
     { x: mazeSize - 3, y: mazeSize - 2 },
     { x: mazeSize - 2, y: mazeSize - 3 }
   ];
-  const shuffled = base.sort(() => Math.random() - 0.5); // ランダム化
-  treasures = shuffled.map((pos, idx) => ({ ...pos, isMimic: idx !== 0 })); // 先頭だけ正解
-  for (const pos of base) {
+  const shuffled = area.sort(() => Math.random() - 0.5);
+  treasures = shuffled.map((pos, i) => ({ ...pos, isMimic: i !== 0 }));
+  for (const pos of area) {
     maze[pos.y][pos.x] = 0;
     for (let dy = -1; dy <= 1; dy++) {
       for (let dx = -1; dx <= 1; dx++) {
@@ -155,13 +173,11 @@ function draw() {
       ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
     }
   }
-
   for (const t of treasures) {
     const revealed = revealedTreasures.some(rt => rt.x === t.x && rt.y === t.y);
     const img = revealed ? (t.isMimic ? mimicImg : coinImg) : treasureImg;
     ctx.drawImage(img, t.x * cellSize, t.y * cellSize, cellSize, cellSize);
   }
-
   ctx.drawImage(heroImg, hero.x * cellSize, hero.y * cellSize, cellSize, cellSize);
 }
 
@@ -221,7 +237,6 @@ function showMessage(text) {
   msg.textContent = text;
   msg.style.display = 'block';
 }
-
 function hideMessage() {
   document.getElementById('message').style.display = 'none';
 }
@@ -230,8 +245,8 @@ function showQuiz(treasure) {
   const box = document.getElementById("quiz-box");
   const q = document.getElementById("quiz-question");
   const opts = document.getElementById("quiz-options");
-  const quiz = quizData[Math.floor(Math.random() * quizData.length)];
 
+  const quiz = quizData[Math.floor(Math.random() * quizData.length)];
   q.textContent = quiz.question;
   opts.innerHTML = "";
 
@@ -291,3 +306,23 @@ document.addEventListener("keydown", e => {
   if (e.key === "ArrowLeft") moveHero(-1, 0);
   if (e.key === "ArrowRight") moveHero(1, 0);
 });
+
+function setupControls() {
+  // ジョイスティックは既に対応済み（省略OK）
+}
+
+function setupKeyboard() {
+  // キーボード入力は上ですでに設定済み
+}
+
+function setupResizeHandler() {
+  window.addEventListener('resize', () => {
+    if (maze.length > 0) {
+      const maxWidth = Math.min(window.innerWidth * 0.95, window.innerHeight * 0.75, 600);
+      cellSize = Math.floor(maxWidth / mazeSize);
+      canvas.width = mazeSize * cellSize;
+      canvas.height = mazeSize * cellSize;
+      draw();
+    }
+  });
+}
