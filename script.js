@@ -32,7 +32,7 @@ let audioCount = 0;
 function checkAllLoaded() {
   if (imagesLoaded && audioLoaded) {
     loadingElement.style.display = 'none';
-    setupGame(); // ゲーム開始（後述）
+    setupAudioTriggers();
   }
 }
 
@@ -56,18 +56,33 @@ heroImg.onload = treasureImg.onload = mimicImg.onload = coinImg.onload = imageLo
 bgm.oncanplaythrough = seikaiSE.oncanplaythrough = fuseikaiSE.oncanplaythrough =
 rechargeSE.oncanplaythrough = takaraSE.oncanplaythrough = kamitukuSE.oncanplaythrough = audioLoadedFn;
 
-// ✅ 保険：8秒以内に読み込めなかったら強制スタート
 setTimeout(() => {
   if (!imagesLoaded || !audioLoaded) {
-    console.warn("読み込みが遅れているため強制スタート");
+    console.warn("読み込み遅延 → 強制開始");
     imagesLoaded = true;
     audioLoaded = true;
     loadingElement.style.display = 'none';
-    setupGame();
+    setupAudioTriggers();
   }
 }, 8000);
 
-// ✅ BGMトリガー
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('start-button').addEventListener('click', () => {
+    document.getElementById('start-screen').classList.add('hidden');
+    document.getElementById('game-container').classList.remove('hidden');
+    playSound(bgm);
+    setupGame();
+  });
+
+  document.getElementById('restart-button').addEventListener('click', () => {
+    document.getElementById('restart-screen').classList.add('hidden');
+    document.getElementById('game-container').classList.remove('hidden');
+    level = 1;
+    playSound(bgm);
+    setupGame();
+  });
+});
+
 function setupAudioTriggers() {
   const startAudio = () => {
     bgm.volume = 0.5;
@@ -78,6 +93,9 @@ function setupAudioTriggers() {
   document.addEventListener('click', startAudio);
   document.addEventListener('touchstart', startAudio);
 }
+
+// === ゲーム本体 ===
+
 let level = 1;
 let mazeSize;
 let cellSize;
@@ -173,11 +191,13 @@ function draw() {
       ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
     }
   }
+
   for (const t of treasures) {
     const revealed = revealedTreasures.some(rt => rt.x === t.x && rt.y === t.y);
     const img = revealed ? (t.isMimic ? mimicImg : coinImg) : treasureImg;
     ctx.drawImage(img, t.x * cellSize, t.y * cellSize, cellSize, cellSize);
   }
+
   ctx.drawImage(heroImg, hero.x * cellSize, hero.y * cellSize, cellSize, cellSize);
 }
 
@@ -237,6 +257,7 @@ function showMessage(text) {
   msg.textContent = text;
   msg.style.display = 'block';
 }
+
 function hideMessage() {
   document.getElementById('message').style.display = 'none';
 }
@@ -245,8 +266,8 @@ function showQuiz(treasure) {
   const box = document.getElementById("quiz-box");
   const q = document.getElementById("quiz-question");
   const opts = document.getElementById("quiz-options");
-
   const quiz = quizData[Math.floor(Math.random() * quizData.length)];
+
   q.textContent = quiz.question;
   opts.innerHTML = "";
 
@@ -284,14 +305,17 @@ function playSound(sound) {
   sound.play().catch(() => {});
 }
 
-["up", "down", "left", "right"].forEach(dir => {
-  const btn = document.getElementById(dir);
-  btn.addEventListener("mousedown", () => move(dir));
-  btn.addEventListener("touchstart", e => {
-    e.preventDefault();
-    move(dir);
+function setupControls() {
+  ["up", "down", "left", "right"].forEach(dir => {
+    const btn = document.getElementById(dir);
+    if (!btn) return;
+    btn.addEventListener("mousedown", () => move(dir));
+    btn.addEventListener("touchstart", e => {
+      e.preventDefault();
+      move(dir);
+    });
   });
-});
+}
 
 function move(dir) {
   if (dir === "up") moveHero(0, -1);
@@ -300,19 +324,13 @@ function move(dir) {
   if (dir === "right") moveHero(1, 0);
 }
 
-document.addEventListener("keydown", e => {
-  if (e.key === "ArrowUp") moveHero(0, -1);
-  if (e.key === "ArrowDown") moveHero(0, 1);
-  if (e.key === "ArrowLeft") moveHero(-1, 0);
-  if (e.key === "ArrowRight") moveHero(1, 0);
-});
-
-function setupControls() {
-  // ジョイスティックは既に対応済み（省略OK）
-}
-
 function setupKeyboard() {
-  // キーボード入力は上ですでに設定済み
+  document.addEventListener("keydown", e => {
+    if (e.key === "ArrowUp") moveHero(0, -1);
+    if (e.key === "ArrowDown") moveHero(0, 1);
+    if (e.key === "ArrowLeft") moveHero(-1, 0);
+    if (e.key === "ArrowRight") moveHero(1, 0);
+  });
 }
 
 function setupResizeHandler() {
