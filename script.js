@@ -1,3 +1,4 @@
+// --- 読み込みと画像・音声設定 ---
 let imagesLoaded = false;
 let audioLoaded = false;
 const loadingElement = document.getElementById("loading");
@@ -306,14 +307,34 @@ function playSound(sound) {
 }
 
 function setupControls() {
-  ["up", "down", "left", "right"].forEach(dir => {
+  const movementIntervals = { up: null, down: null, left: null, right: null };
+  const directions = ["up", "down", "left", "right"];
+
+  directions.forEach(dir => {
     const btn = document.getElementById(dir);
     if (!btn) return;
-    btn.addEventListener("mousedown", () => move(dir));
+
+    const startMoving = () => {
+      if (movementIntervals[dir]) return;
+      move(dir);
+      movementIntervals[dir] = setInterval(() => move(dir), 150);
+    };
+
+    const stopMoving = () => {
+      clearInterval(movementIntervals[dir]);
+      movementIntervals[dir] = null;
+    };
+
+    btn.addEventListener("mousedown", startMoving);
     btn.addEventListener("touchstart", e => {
       e.preventDefault();
-      move(dir);
+      startMoving();
     });
+
+    btn.addEventListener("mouseup", stopMoving);
+    btn.addEventListener("mouseleave", stopMoving);
+    btn.addEventListener("touchend", stopMoving);
+    btn.addEventListener("touchcancel", stopMoving);
   });
 }
 
